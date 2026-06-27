@@ -26,8 +26,18 @@ program
 program
   .command("ingest <projeto>")
   .description("Indexa docs/<projeto>/ na tabela do projeto")
-  .action((projeto: string) => {
-    console.log(`[stub] comando 'ingest ${projeto}' ainda não implementado (Fase 4).`);
+  .action(async (projeto: string) => {
+    try {
+      const { ingestProject } = await import("./usecases/ingest-project.js");
+      const result = await ingestProject(projeto);
+      console.log(
+        `Projeto '${result.project}' indexado: ${result.chunks} chunks de ${result.files} arquivo(s).`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Erro: ${message}`);
+      process.exit(1);
+    }
   });
 
 program
