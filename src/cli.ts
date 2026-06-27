@@ -11,8 +11,16 @@ program
 program
   .command("projects")
   .description("Lista os projetos disponíveis em docs/")
-  .action(() => {
-    console.log("[stub] comando 'projects' ainda não implementado (Fase 2).");
+  .action(async () => {
+    const { listProjects } = await import("./docs/loader.js");
+    const projects = await listProjects();
+    if (projects.length === 0) {
+      console.log("Nenhum projeto encontrado em docs/.");
+      return;
+    }
+    for (const project of projects) {
+      console.log(project);
+    }
   });
 
 program

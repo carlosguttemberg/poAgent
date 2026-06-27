@@ -3,3 +3,7 @@ dist/
 data/
 .env
 *.log
+
+# Documentação de projetos é conteúdo do usuário (potencialmente sensível) — nunca commitar.
+docs/*
+!docs/.gitkeep
