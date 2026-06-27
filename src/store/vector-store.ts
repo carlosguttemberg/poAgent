@@ -36,33 +36,46 @@ export async function reset(project: string, records: VectorRecord[]): Promise<v
   });
 }
 
-export async function search(project: string, vector: number[], k: number): Promise<VectorRecord[]> {
+export async function tableExists(project: string): Promise<boolean> {
   const db = await getConnection();
-  const tableName = slug(project);
-
   const names = await db.tableNames();
-  if (!names.includes(tableName)) {
-    throw new Error(`Projeto '${project}' ainda não foi indexado. Rode "po ingest ${project}" primeiro.`);
-  }
+  return names.includes(slug(project));
+}
 
-  const table = await db.openTable(tableName);
-  const rows = await table.vectorSearch(vector).distanceType("cosine").limit(k).toArray();
-  return rows.map((row: Record<string, unknown>) => ({
+function toVectorRecord(row: Record<string, unknown>): VectorRecord {
+  return {
     id: row.id as string,
     file: row.file as string,
     index: row.index as number,
     text: row.text as string,
-    vector: row.vector as number[],
-  }));
+    vector: Array.from(row.vector as Iterable<number>),
+  };
+}
+
+export async function search(project: string, vector: number[], k: number): Promise<VectorRecord[]> {
+  if (!(await tableExists(project))) {
+    throw new Error(`Projeto '${project}' ainda não foi indexado. Rode "po ingest ${project}" primeiro.`);
+  }
+
+  const db = await getConnection();
+  const table = await db.openTable(slug(project));
+  const rows = await table.vectorSearch(vector).distanceType("cosine").limit(k).toArray();
+  return rows.map(toVectorRecord);
+}
+
+export async function getAllRecords(project: string): Promise<VectorRecord[]> {
+  if (!(await tableExists(project))) return [];
+
+  const db = await getConnection();
+  const table = await db.openTable(slug(project));
+  const rows = await table.query().toArray();
+  return rows.map(toVectorRecord);
 }
 
 export async function count(project: string): Promise<number> {
+  if (!(await tableExists(project))) return 0;
+
   const db = await getConnection();
-  const tableName = slug(project);
-
-  const names = await db.tableNames();
-  if (!names.includes(tableName)) return 0;
-
-  const table = await db.openTable(tableName);
+  const table = await db.openTable(slug(project));
   return table.countRows();
 }

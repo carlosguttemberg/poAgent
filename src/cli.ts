@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { createInterface } from "node:readline/promises";
 
 const program = new Command();
 
@@ -31,7 +32,7 @@ program
       const { ingestProject } = await import("./usecases/ingest-project.js");
       const result = await ingestProject(projeto);
       console.log(
-        `Projeto '${result.project}' indexado: ${result.chunks} chunks de ${result.files} arquivo(s).`,
+        `Projeto '${result.project}': ${result.changedFiles} arquivo(s) alterado(s), ${result.chunks} chunks no total (${result.files} arquivo(s)).`,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -43,10 +44,45 @@ program
 program
   .command("ask <projeto> [pergunta]")
   .description("Responde usando só o índice daquele projeto")
-  .action((projeto: string, pergunta?: string) => {
-    console.log(
-      `[stub] comando 'ask ${projeto} ${pergunta ?? ""}' ainda não implementado (Fase 5).`,
-    );
+  .action(async (projeto: string, pergunta?: string) => {
+    const { askProject } = await import("./usecases/ask-project.js");
+
+    async function ask(question: string): Promise<void> {
+      const result = await askProject(projeto, question);
+      console.log(result.answer);
+      if (result.sources.length > 0) {
+        console.log(`\nFontes: ${result.sources.join(", ")}`);
+      }
+    }
+
+    if (pergunta) {
+      try {
+        await ask(pergunta);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Erro: ${message}`);
+        process.exit(1);
+      }
+      return;
+    }
+
+    console.log(`Modo REPL — projeto '${projeto}'. Digite "sair" para encerrar.`);
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      while (true) {
+        const question = (await rl.question("> ")).trim();
+        if (!question) continue;
+        if (question.toLowerCase() === "sair") break;
+        try {
+          await ask(question);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`Erro: ${message}`);
+        }
+      }
+    } finally {
+      rl.close();
+    }
   });
 
 program
