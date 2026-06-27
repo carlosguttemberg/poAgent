@@ -34,8 +34,16 @@ program
 program
   .command("auth:check")
   .description("Verifica se as credenciais do Vertex AI estão funcionando")
-  .action(() => {
-    console.log("[stub] comando 'auth:check' ainda não implementado (Fase 1).");
+  .action(async () => {
+    try {
+      const { generate } = await import("./gemini/client.js");
+      await generate("Responda apenas: ok");
+      console.log("Autenticação OK — credenciais válidas e Gemini respondeu.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Falha na autenticação: ${message}`);
+      process.exit(1);
+    }
   });
 
 async function main(): Promise<void> {
