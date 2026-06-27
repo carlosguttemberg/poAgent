@@ -1,0 +1,30 @@
+{
+  "name": "po-agent",
+  "version": "0.1.0",
+  "description": "CLI Product Owner com RAG multi-projeto sobre documentação (Vertex AI + LanceDB).",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "po": "./dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsc",
+    "po": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.8.0",
+    "@lancedb/lancedb": "^0.13.0",
+    "commander": "^14.0.3",
+    "fast-glob": "^3.3.3",
+    "google-auth-library": "^10.7.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.20",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
