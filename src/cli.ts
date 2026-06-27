@@ -86,6 +86,21 @@ program
   });
 
 program
+  .command("flow <projeto>")
+  .description("Gera um HTML com o fluxo de negócio do projeto, desenhado em CSS")
+  .action(async (projeto: string) => {
+    try {
+      const { generateFlow } = await import("./usecases/generate-flow.js");
+      const result = await generateFlow(projeto);
+      console.log(`Fluxo gerado: ${result.steps} etapa(s) → ${result.outputPath}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Erro: ${message}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command("auth:check")
   .description("Verifica se as credenciais do Vertex AI estão funcionando")
   .action(async () => {

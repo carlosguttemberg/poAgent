@@ -18,9 +18,9 @@ GOOGLE_APPLICATION_CREDENTIALS=./credentials/service-account.json
 GCP_PROJECT_ID=
 ```
 
-As demais variáveis (`GCP_LOCATION`, `GEMINI_MODEL`, `EMBED_MODEL`, `EMBED_DIM`, `TOP_K`, `DOCS_DIR`, `DB_PATH`) já têm defaults sensatos — só ajuste se precisar.
+As demais variáveis (`GCP_LOCATION`, `GEMINI_MODEL`, `EMBED_MODEL`, `EMBED_DIM`, `TOP_K`, `DOCS_DIR`, `DB_PATH`, `OUTPUT_DIR`) já têm defaults sensatos — só ajuste se precisar.
 
-> `docs/` (documentação dos projetos) e `data/` (índices LanceDB) não são versionados — `docs/` porque pode conter informação de negócio sensível, `data/` porque é gerado.
+> `docs/` (documentação dos projetos), `data/` (índices LanceDB) e `output/` (HTMLs gerados) não são versionados — `docs/` porque pode conter informação de negócio sensível, os outros dois porque são gerados.
 
 ## Fluxo dos comandos
 
@@ -30,6 +30,7 @@ npm run po -- projects                          # lista projetos em docs/<projet
 npm run po -- ingest <projeto>                  # indexa/reindexa um projeto
 npm run po -- ask <projeto> "<pergunta>"        # pergunta única
 npm run po -- ask <projeto>                     # modo REPL (várias perguntas; "sair" para encerrar)
+npm run po -- flow <projeto>                    # gera output/<projeto>-fluxo.html com o fluxo de negócio
 ```
 
 Para usar a doc de um novo projeto, crie `docs/<nome-do-projeto>/*.md` e rode `po ingest <nome-do-projeto>`.
@@ -44,9 +45,11 @@ src/
 ├── gemini/               # client REST (generateContent) + embeddings (batchEmbedContents)
 ├── docs/                 # loader (lista/lê docs por projeto) + chunker (markdown-aware)
 ├── store/                # LanceDB — 1 tabela por projeto, busca por cosseno
-├── usecases/              # ingest-project (loader→chunker→embeddings→store) e ask-project
-└── po/                    # persona e regras de grounding do Product Owner
+├── usecases/              # ingest-project, ask-project e generate-flow
+└── po/                    # persona/grounding (system-prompt) e geração de fluxo (flow-prompt, flow-template)
 ```
+
+`po flow <projeto>` lê a documentação completa do projeto (sem passar pelo índice RAG, já que o fluxo precisa do contexto inteiro, não de top-k chunks), pede ao Gemini para extrair as etapas do processo de negócio em JSON estruturado, valida a resposta com zod e renderiza um HTML autocontido (CSS embutido, sem dependências externas) em `output/<projeto>-fluxo.html`.
 
 **Isolamento por projeto é invariante**: `ask-project` abre apenas a tabela LanceDB do projeto perguntado. Não existe caminho de código que consulte mais de uma tabela na mesma pergunta.
 

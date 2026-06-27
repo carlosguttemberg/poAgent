@@ -41,6 +41,7 @@ const ConfigSchema = z.object({
   topK: z.coerce.number().int().positive().default(6),
   docsDir: z.string().default("./docs"),
   dbPath: z.string().default("./data/lancedb"),
+  outputDir: z.string().default("./output"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -59,6 +60,7 @@ function buildConfig(): Config {
     topK: process.env.TOP_K,
     docsDir: process.env.DOCS_DIR,
     dbPath: process.env.DB_PATH,
+    outputDir: process.env.OUTPUT_DIR,
   });
 
   if (!result.success) {
