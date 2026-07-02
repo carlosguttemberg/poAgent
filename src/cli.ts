@@ -92,7 +92,7 @@ program
     try {
       const { generateFlow } = await import("./usecases/generate-flow.js");
       const result = await generateFlow(projeto);
-      console.log(`Fluxo gerado: ${result.steps} etapa(s) → ${result.outputPath}`);
+      console.log(`Fluxo gerado: ${result.phases} fase(s), ${result.steps} passo(s) → ${result.outputPath}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`Erro: ${message}`);

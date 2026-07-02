@@ -5,15 +5,26 @@ import { config } from "../config.js";
 import { readProjectFiles } from "../docs/loader.js";
 import { generate } from "../gemini/client.js";
 import { buildFlowPrompt } from "../po/flow-prompt.js";
-import { buildFlowHtml, type FlowStep } from "../po/flow-template.js";
+import { buildFlowHtml, type FlowData } from "../po/flow-template.js";
 
 const FlowStepSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
+  details: z.array(z.string()).default([]),
 });
-const FlowResponseSchema = z.object({ steps: z.array(FlowStepSchema).min(1) });
 
-function parseFlowResponse(raw: string): FlowStep[] {
+const FlowPhaseSchema = z.object({
+  title: z.string().min(1),
+  steps: z.array(FlowStepSchema).min(1),
+});
+
+const FlowResponseSchema = z.object({
+  title: z.string().min(1),
+  overview: z.string().min(1),
+  phases: z.array(FlowPhaseSchema).min(1),
+});
+
+function parseFlowResponse(raw: string): FlowData {
   const cleaned = raw
     .trim()
     .replace(/^```(?:json)?/i, "")
@@ -32,11 +43,12 @@ function parseFlowResponse(raw: string): FlowStep[] {
     throw new Error("Resposta do modelo não corresponde ao formato esperado de fluxo.");
   }
 
-  return result.data.steps;
+  return result.data;
 }
 
 export interface GenerateFlowResult {
   project: string;
+  phases: number;
   steps: number;
   outputPath: string;
 }
@@ -49,13 +61,14 @@ export async function generateFlow(project: string): Promise<GenerateFlowResult>
 
   const prompt = buildFlowPrompt(files);
   const raw = await generate(prompt);
-  const steps = parseFlowResponse(raw);
+  const data = parseFlowResponse(raw);
 
-  const html = buildFlowHtml(project, steps);
+  const html = buildFlowHtml(project, data);
 
   await mkdir(config.outputDir, { recursive: true });
   const outputPath = join(config.outputDir, `${project}-fluxo.html`);
   await writeFile(outputPath, html, "utf-8");
 
-  return { project, steps: steps.length, outputPath };
+  const totalSteps = data.phases.reduce((n, p) => n + p.steps.length, 0);
+  return { project, phases: data.phases.length, steps: totalSteps, outputPath };
 }
